@@ -4,7 +4,7 @@ namespace Application.Interfaces;
 
 public interface IGenericRepository<T> where T:class
 {
-    Task<IEnumerable<Lesson>> GetAllAsync();
+    Task<IEnumerable<Lesson>> GetAllAsync(QueryParameters? queryParameters);
     Task<T> GetByIdAsync(int id);
     Task<Guid> AddAsync(T entity);
     Task<Guid> UpdateAsync(int id);

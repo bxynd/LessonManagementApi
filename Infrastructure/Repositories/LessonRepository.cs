@@ -14,34 +14,40 @@ public class LessonRepository: ILessonRepository
     {
         _configuration = configuration;
     }
-    public async Task<IEnumerable<Lesson>> GetAllAsync()
+    public async Task<IEnumerable<Lesson>> GetAllAsync(QueryParameters? queryParameters)
     {
-        var query = @"select l.id,l.date,l.title,l.status,s.id,s.name,ls.visit,t.id,t.name
-                      from lessons l 
-                      inner join lesson_students ls on ls.lesson_id = l.id
-                      inner join students s on s.id = ls.student_id
-                      inner join lesson_teachers lt on lt.lesson_id = l.id
-                      inner join teachers t on t.id = lt.teacher_id";
+        Query.GetAllLessonsQuery(queryParameters);
         
         using var connection = new NpgsqlConnection(_configuration.GetConnectionString("DefaultConnection"));
-        var lessons = await connection.QueryAsync<Lesson,Student,Teacher,Lesson>(query,
+        var lessons = await connection.QueryAsync<Lesson,Student,Teacher,Lesson>(Query.Sql,
             (lesson,student,teacher) =>
             {
                 if(student == null)
                 {
                     return lesson;
                 }
+                lesson.Students.Add(student);
                 if(teacher == null)
                 {
                     return lesson;
                 }
-                lesson.Students.Add(student);
                 lesson.Teachers.Add(teacher);
                 return lesson;
             },
-            splitOn: "id,id"
+            splitOn: Query.SplitOn
         );
-        return lessons;
+        var result = lessons.GroupBy(l => l.Id).Select(g =>
+        {
+            var groupedLesson = g.First();
+            groupedLesson.Students = g.Select(l => l.Students.SingleOrDefault()).Select(s=>s).Where(s=>s != null).DistinctBy(s=>s.Sid).ToList();
+            groupedLesson.Teachers = g.Select(l => l.Teachers.SingleOrDefault()).Select(t=>t).Where(t=>t != null).DistinctBy(t=>t.Tid).ToList();
+            return groupedLesson;
+            
+        }).OrderBy(l=>l.Id)
+            .Skip((queryParameters.PageNumber - 1) * queryParameters.PageSize)
+            .Take(queryParameters.PageSize)
+            .ToList();
+        return result;
     }
 
     public Task<Lesson> GetByIdAsync(int id)

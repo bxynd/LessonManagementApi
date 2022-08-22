@@ -9,9 +9,9 @@ public class Lesson
     public DateTime Date { get; set; }
     public string Title { get; set; }
     public Status Status { get; set; }
-    
-    public List<Teacher> Teachers { get; set; }
-    public List<Student> Students { get; set; }
+    public int VisitCount { get; set; }
+    public List<Teacher>? Teachers { get; set; }
+    public List<Student>? Students { get; set; }
 
     public Lesson()
     {

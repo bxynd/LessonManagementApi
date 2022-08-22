@@ -1,4 +1,5 @@
 ﻿using Application.Interfaces;
+using Domain.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -14,9 +15,9 @@ public class DataController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] QueryParameters? queryParameters)
     {
-        var data = await _unitOfWork.Lessons.GetAllAsync();
+        var data = await _unitOfWork.Lessons.GetAllAsync(queryParameters);
         return Ok(data);
     }
 }
